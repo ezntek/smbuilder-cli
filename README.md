@@ -1,2 +1,3 @@
 # smbuilder-cli
-a CLI for smbuilder
+
+## todo: write this readme
