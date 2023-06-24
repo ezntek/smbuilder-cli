@@ -1,48 +1,32 @@
-use clap::Parser;
-use smbuilder::{prelude::SmbuilderWrapper, types::Spec};
-use smbuilder_cli::{builder::*, cli::*, pretty_panic, settings::*};
+use colored::Colorize;
+use smbuilder::prelude::*;
 
 fn main() {
-    let args = Args::parse();
+    let mut callbacks = Callbacks::empty()
+        .log(|log_type, text| {
+            use LogType::*;
 
-    let Command::Build(build_args) = args.cmd;
+            match log_type {
+                Error => println!("{}{}", "error: ".bold().red(), text),
+                Warn => println!("{}{}", "warn: ".bold().magenta(), text),
+                BuildOutput => println!("{}{}", "make: ".bold().cyan(), text),
+                Info => println!("{}{}", "info: ".bold().blue(), text),
+            };
+        })
+        .repo_clone_progress(|progress, bytes_transferred| {
+            print!(
+                "{}{}% ({} kb transferred)\r",
+                "clone: ".bold().green(),
+                (progress * 100_f64),
+                (bytes_transferred * 1024_usize)
+            )
+        });
 
-    let log_level_setting = if build_args.verbose {
-        CmdoutSettings::LogProgress { log_level: 3 }
-    } else {
-        if let Some(log_level) = build_args.log_level {
-            CmdoutSettings::LogProgress { log_level }
-        } else {
-            CmdoutSettings::LogProgress { log_level: 2 }
-        }
-    };
+    let spec = Spec::from_file_checked("./sample.yaml", &mut callbacks)
+        .unwrap_or_else(|e| panic!("failed to create the spec: {}", e));
 
-    let settings = Settings {
-        cmdout_settings: log_level_setting,
-    };
+    let mut builder = Builder::new(spec, "./", callbacks)
+        .unwrap_or_else(|e| panic!("failed to create the builder: {}", e));
 
-    let spec = match Spec::from_file(build_args.filename) {
-        Ok(s) => s,
-        Err(e) => {
-            pretty_panic(e, &settings);
-            panic!(); // dummy code
-        }
-    };
-
-    let builder = match SmbuilderWrapper::new(
-        spec,
-        "./",
-        Box::new(settings.to_runnable()),
-        Box::new(CliBuilder::new(settings)),
-    ) {
-        Ok(b) => b,
-        Err(e) => {
-            pretty_panic(e, &settings);
-            panic!() // dummy code for the compiler
-        }
-    };
-    match builder.build() {
-        Ok(_) => (),
-        Err(e) => pretty_panic(e, &settings),
-    };
+    builder.build();
 }

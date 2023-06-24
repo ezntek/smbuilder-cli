@@ -3,14 +3,12 @@ name: something
 rom:
   region: us
   path: ./rom.z64
+  format: rom_BigEndian
 
 repo:
   name: da-repo
   url: "https://github.com/sm64pc/sm64ex"
   branch: nightly
-  supports_packs: true
-  supports_textures: false
+  about: something
 
-additional_makeopts:
-  - key: DISCORDRPC
-    value: "0"
+jobs: 8
