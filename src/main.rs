@@ -1,7 +1,18 @@
+use std::path::PathBuf;
+
+use clap::Parser;
 use colored::Colorize;
 use smbuilder::prelude::*;
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    filename: PathBuf,
+}
+
 fn main() {
+    color_eyre::install().unwrap();
+
     let mut callbacks = Callbacks::empty()
         .log(|log_type, text| {
             use LogType::*;
@@ -13,12 +24,14 @@ fn main() {
                 Info => println!("{}{}", "info: ".bold().blue(), text),
             };
         })
-        .repo_clone_progress(|progress, bytes_transferred| {
+        .repo_clone_progress(|recv_objs, total_objs, bytes_transferred| {
             print!(
-                "{}{}% ({} kb transferred)\r",
-                "clone: ".bold().green(),
-                (progress * 100_f64),
-                (bytes_transferred * 1024_usize)
+                "{} {}/{} ({}%) objects transferred ({} KiB transferred)\r",
+                "clone:".bold().green(),
+                recv_objs,
+                total_objs,
+                (recv_objs * 100) / total_objs,
+                (bytes_transferred as f64 / 1024_f64).floor(),
             )
         });
 

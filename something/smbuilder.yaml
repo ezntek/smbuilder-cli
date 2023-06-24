@@ -1,0 +1,15 @@
+rom:
+  region: us
+  path: ./rom.z64
+  format: rom_BigEndian
+repo:
+  name: da-repo
+  url: https://github.com/sm64pc/sm64ex
+  branch: nightly
+  about: something
+jobs: 8
+name: something
+makeopts: null
+packs: null
+patches: null
+scripts: null
